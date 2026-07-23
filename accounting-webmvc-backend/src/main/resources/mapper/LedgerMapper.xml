@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.accounting.mapper.LedgerMapper">
+
+    <resultMap id="LedgerResultMap" type="Ledger">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="ownerId" column="owner_id"/>
+        <result property="type" column="type"/>
+        <result property="allowMemberEdit" column="allow_member_edit"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="LedgerResultMap">
+        SELECT * FROM ledger WHERE id = #{id}
+    </select>
+
+    <select id="findByOwnerId" resultMap="LedgerResultMap">
+        SELECT * FROM ledger WHERE owner_id = #{ownerId} ORDER BY id
+    </select>
+
+    <!-- 通过 ledger_member 关联查询用户参与的所有账本 -->
+    <select id="findByUserId" resultMap="LedgerResultMap">
+        SELECT l.* FROM ledger l
+        INNER JOIN ledger_member lm ON l.id = lm.ledger_id
+        WHERE lm.user_id = #{userId}
+        ORDER BY l.id
+    </select>
+
+    <insert id="insert" parameterType="Ledger" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ledger (name, description, owner_id, type, allow_member_edit, created_at, updated_at)
+        VALUES (#{name}, #{description}, #{ownerId}, #{type}, #{allowMemberEdit}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="update" parameterType="Ledger">
+        UPDATE ledger
+        SET name = #{name},
+            description = #{description},
+            type = #{type},
+            allow_member_edit = #{allowMemberEdit},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM ledger WHERE id = #{id}
+    </delete>
+
+</mapper>

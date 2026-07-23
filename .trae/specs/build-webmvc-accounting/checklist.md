@@ -1,0 +1,31 @@
+- [x] 项目重命名完成：accounting-backend → accounting-webflux-backend
+- [x] 项目重命名完成：accounting-frontend → accounting-webflux-frontend
+- [x] 父 pom 聚合四个模块（2 后端 + 2 前端）
+- [x] Web MVC 后端脚手架搭建完成，可编译
+- [x] application.yml 配置正确（端口 8081、MySQL、Redis、MongoDB、JWT、MyBatis）
+- [x] ApiResponse / BusinessException / GlobalExceptionHandler / PageResult 与 Webflux 版一致
+- [x] CORS 配置生效
+- [x] 请求日志拦截器正常
+- [x] Web MVC 用户注册接口功能完整
+- [x] Web MVC 用户登录接口返回 JWT Token
+- [x] JWT 认证过滤器正确拦截未授权请求
+- [x] Token 刷新接口可正常续期
+- [x] Spring Security 配置正确（白名单、STATELESS）
+- [x] 分类 CRUD 接口功能完整（预设分类不可删除）
+- [x] MyBatis CategoryMapper XML 映射正确
+- [x] 记账 CRUD 接口功能完整
+- [x] MyBatis BillMapper XML 动态 SQL 正确
+- [x] PageHelper 分页正确
+- [x] MongoDB 原始记账明细同步写入/更新/删除（Web MVC 版）
+- [x] MongoDB 原始记账明细同步写入/更新/删除（Webflux 版）
+- [x] 按周统计接口正确
+- [x] 按月统计接口正确
+- [x] 按年统计接口正确
+- [x] 按分类统计接口正确
+- [x] Redis 缓存生效（Web MVC 版）
+- [x] accounting-webmvc-frontend 前端创建完成，代理 8081
+- [x] 两套前端功能均正常
+- [x] 架构对比文档完整（技术栈/线程模型/适用场景）
+- [x] 使用文档完整（环境准备/启动步骤）
+- [x] API 参考文档准确
+- [x] MongoDB 设计文档完整

@@ -1,0 +1,39 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: accounting-webmvc-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/webmvc_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: webflux_user
+    password: WfU@123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    mongodb:
+      uri: mongodb://admin:Mongo%40123456@localhost:27017/webmvc_mongo?authSource=admin
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password: Redis@123456
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.example.accounting.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+
+jwt:
+  secret: accounting-jwt-secret-key-2026-change-in-production
+  expiration: 86400000
+
+logging:
+  level:
+    root: info
+    com.example.accounting: debug

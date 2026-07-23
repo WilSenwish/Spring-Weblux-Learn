@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.4.6
+    container_name: mysql_846
+    restart: no
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: Root@123456
+      MYSQL_DATABASE: webflux_db
+      MYSQL_USER: webflux_user
+      MYSQL_PASSWORD: WfU@123456
+    volumes:
+      - /Users/chenjunbing/Develop/LocalService/data/mysql:/var/lib/mysql
+      - /Users/chenjunbing/Develop/LocalService/mysql/conf:/etc/mysql/conf.d
+
+  redis-stack:
+    image: docker.m.daocloud.io/redis/redis-stack:7.2.0-v10
+    container_name: redis_stack_720_v10
+    restart: no
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    environment:
+      TZ: Asia/Shanghai
+      REDIS_ARGS: --requirepass Redis@123456 --appendonly yes
+    volumes:
+      - /Users/chenjunbing/Develop/LocalService/data/redis-stack:/data
+
+  mongodb:
+    image: docker.m.daocloud.io/library/mongo:7.0.24
+    container_name: mongo_7024
+    restart: no
+    ports:
+      - "27017:27017"
+    environment:
+      TZ: Asia/Shanghai
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: Mongo@123456
+      MONGO_INITDB_DATABASE: webflux_mongo
+    volumes:
+      - /Users/chenjunbing/Develop/LocalService/data/mongo:/data/db
+
+networks:
+  default:
+    name: localservice_network

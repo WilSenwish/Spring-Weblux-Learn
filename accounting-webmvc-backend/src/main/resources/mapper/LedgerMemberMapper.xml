@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.accounting.mapper.LedgerMemberMapper">
+
+    <resultMap id="LedgerMemberResultMap" type="LedgerMember">
+        <id property="id" column="id"/>
+        <result property="ledgerId" column="ledger_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="role" column="role"/>
+        <result property="joinedAt" column="joined_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="LedgerMemberResultMap">
+        SELECT * FROM ledger_member WHERE id = #{id}
+    </select>
+
+    <select id="findByLedgerId" resultMap="LedgerMemberResultMap">
+        SELECT * FROM ledger_member WHERE ledger_id = #{ledgerId} ORDER BY id
+    </select>
+
+    <select id="findByLedgerIdAndUserId" resultMap="LedgerMemberResultMap">
+        SELECT * FROM ledger_member WHERE ledger_id = #{ledgerId} AND user_id = #{userId}
+    </select>
+
+    <select id="findByUserId" resultMap="LedgerMemberResultMap">
+        SELECT * FROM ledger_member WHERE user_id = #{userId} ORDER BY id
+    </select>
+
+    <insert id="insert" parameterType="LedgerMember" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ledger_member (ledger_id, user_id, role, joined_at)
+        VALUES (#{ledgerId}, #{userId}, #{role}, #{joinedAt})
+    </insert>
+
+    <delete id="deleteByLedgerIdAndUserId">
+        DELETE FROM ledger_member WHERE ledger_id = #{ledgerId} AND user_id = #{userId}
+    </delete>
+
+    <delete id="deleteByLedgerId">
+        DELETE FROM ledger_member WHERE ledger_id = #{ledgerId}
+    </delete>
+
+</mapper>

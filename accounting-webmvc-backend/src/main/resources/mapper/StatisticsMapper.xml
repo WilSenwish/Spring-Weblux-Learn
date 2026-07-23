@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.accounting.mapper.StatisticsMapper">
+
+    <resultMap id="TimePeriodStatResultMap" type="com.example.accounting.dto.TimePeriodStat">
+        <result property="period" column="period"/>
+        <result property="income" column="income"/>
+        <result property="expense" column="expense"/>
+    </resultMap>
+
+    <resultMap id="CategoryStatResultMap" type="com.example.accounting.dto.CategoryStat">
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="type" column="type"/>
+        <result property="amount" column="amount"/>
+    </resultMap>
+
+    <select id="weeklyStats" resultMap="TimePeriodStatResultMap">
+        SELECT
+            DATE_FORMAT(bill_date, '%Y-%m-%d') as period,
+            SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) as income,
+            SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) as expense
+        FROM bill
+        WHERE user_id = #{userId} AND bill_date BETWEEN #{startDate} AND #{endDate}
+        <if test="ledgerId != null">AND ledger_id = #{ledgerId}</if>
+        GROUP BY DATE_FORMAT(bill_date, '%Y-%m-%d')
+        ORDER BY period
+    </select>
+
+    <select id="monthlyStats" resultMap="TimePeriodStatResultMap">
+        SELECT
+            DATE_FORMAT(bill_date, '%Y-%m-%d') as period,
+            SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) as income,
+            SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) as expense
+        FROM bill
+        WHERE user_id = #{userId} AND bill_date BETWEEN #{startDate} AND #{endDate}
+        <if test="ledgerId != null">AND ledger_id = #{ledgerId}</if>
+        GROUP BY DATE_FORMAT(bill_date, '%Y-%m-%d')
+        ORDER BY period
+    </select>
+
+    <select id="yearlyStats" resultMap="TimePeriodStatResultMap">
+        SELECT
+            DATE_FORMAT(bill_date, '%Y-%m') as period,
+            SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) as income,
+            SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) as expense
+        FROM bill
+        WHERE user_id = #{userId} AND bill_date BETWEEN #{startDate} AND #{endDate}
+        <if test="ledgerId != null">AND ledger_id = #{ledgerId}</if>
+        GROUP BY DATE_FORMAT(bill_date, '%Y-%m')
+        ORDER BY period
+    </select>
+
+    <select id="categoryStats" resultMap="CategoryStatResultMap">
+        SELECT
+            c.id as category_id,
+            c.name as category_name,
+            c.type,
+            SUM(b.amount) as amount
+        FROM bill b
+        JOIN category c ON b.category_id = c.id
+        WHERE b.user_id = #{userId}
+          AND b.bill_date BETWEEN #{startDate} AND #{endDate}
+        <if test="ledgerId != null">AND b.ledger_id = #{ledgerId}</if>
+        <if test="type != null">AND c.type = #{type}</if>
+        GROUP BY c.id, c.name, c.type
+        ORDER BY amount DESC
+    </select>
+
+</mapper>

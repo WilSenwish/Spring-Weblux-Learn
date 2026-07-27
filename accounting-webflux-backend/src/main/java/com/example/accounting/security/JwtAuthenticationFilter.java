@@ -36,20 +36,12 @@ public class JwtAuthenticationFilter implements WebFilter {
         String token = authHeader.substring(7);
 
         return jwtUtil.extractUsernameReactive(token)
-                .flatMap(username -> jwtUtil.validateTokenReactive(token, username)
-                        .flatMap(valid -> {
-                            if (Boolean.TRUE.equals(valid)) {
-                                return userDetailsService.findByUsername(username)
-                                        .flatMap(userDetails -> {
-                                            UsernamePasswordAuthenticationToken authentication =
-                                                    new UsernamePasswordAuthenticationToken(
-                                                            userDetails, null, userDetails.getAuthorities());
-                                            return chain.filter(exchange)
-                                                    .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
-                                        });
-                            }
-                            return chain.filter(exchange);
-                        }))
+                .filterWhen(username -> jwtUtil.validateTokenReactive(token, username))
+                .flatMap(userDetailsService::findByUsername)
+                .map(userDetails -> new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()))
+                .flatMap(authentication -> chain.filter(exchange)
+                        .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication)))
                 .switchIfEmpty(chain.filter(exchange))
                 .onErrorResume(throwable -> chain.filter(exchange));
     }

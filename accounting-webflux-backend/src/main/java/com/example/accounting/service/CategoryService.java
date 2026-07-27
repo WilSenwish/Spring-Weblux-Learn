@@ -19,8 +19,7 @@ public class CategoryService {
     private CategoryRepository categoryRepository;
 
     public Mono<Category> createCategory(Long userId, CategoryRequest request) {
-        // 检查同账本下是否已存在同名同类型分类
-        return categoryRepository.existsByUserIdAndLedgerIdAndNameAndType(userId, request.getLedgerId(), request.getName(), request.getType())
+        return checkCategoryExists(userId, request.getLedgerId(), request.getName(), request.getType())
                 .flatMap(exists -> {
                     if (Boolean.TRUE.equals(exists)) {
                         return Mono.error(new BusinessException("该分类已存在"));
@@ -40,13 +39,11 @@ public class CategoryService {
     public Mono<Category> updateCategory(Long userId, Long categoryId, CategoryRequest request) {
         return categoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.error(new BusinessException("分类不存在")))
+                .filter(category -> userId.equals(category.getUserId()))
+                .switchIfEmpty(Mono.error(new BusinessException("无权操作该分类")))
+                .filter(category -> !Integer.valueOf(1).equals(category.getIsPreset()))
+                .switchIfEmpty(Mono.error(new BusinessException("预设分类不允许修改")))
                 .flatMap(category -> {
-                    if (!userId.equals(category.getUserId())) {
-                        return Mono.error(new BusinessException("无权操作该分类"));
-                    }
-                    if (Integer.valueOf(1).equals(category.getIsPreset())) {
-                        return Mono.error(new BusinessException("预设分类不允许修改"));
-                    }
                     category.setName(request.getName());
                     category.setType(request.getType());
                     return categoryRepository.save(category);
@@ -56,15 +53,11 @@ public class CategoryService {
     public Mono<Void> deleteCategory(Long userId, Long categoryId) {
         return categoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.error(new BusinessException("分类不存在")))
-                .flatMap(category -> {
-                    if (!userId.equals(category.getUserId())) {
-                        return Mono.error(new BusinessException("无权操作该分类"));
-                    }
-                    if (Integer.valueOf(1).equals(category.getIsPreset())) {
-                        return Mono.error(new BusinessException("预设分类不允许删除"));
-                    }
-                    return categoryRepository.delete(category);
-                });
+                .filter(category -> userId.equals(category.getUserId()))
+                .switchIfEmpty(Mono.error(new BusinessException("无权操作该分类")))
+                .filter(category -> !Integer.valueOf(1).equals(category.getIsPreset()))
+                .switchIfEmpty(Mono.error(new BusinessException("预设分类不允许删除")))
+                .flatMap(categoryRepository::delete);
     }
 
     /**
@@ -74,19 +67,19 @@ public class CategoryService {
      * @param type 分类类型
      */
     public Mono<List<Category>> listCategories(Long userId, Long ledgerId, Integer type) {
-        if (ledgerId != null) {
-            // 查询预设分类 + 该账本的自定义分类
-            Flux<Category> flux = categoryRepository.findByLedgerIdOrIsPreset(ledgerId, 1);
-            if (type != null) {
-                flux = flux.filter(c -> type.equals(c.getType()));
-            }
-            return flux.collectList();
-        }
-        // 不传 ledgerId 时保留旧行为：用户自定义分类 + 预设分类
-        Flux<Category> flux = categoryRepository.findByUserIdOrIsPreset(userId, 1);
+        Flux<Category> flux = ledgerId != null
+                ? categoryRepository.findByLedgerIdOrIsPreset(ledgerId, 1)
+                : categoryRepository.findByUserIdOrIsPreset(userId, 1);
         if (type != null) {
             flux = flux.filter(c -> type.equals(c.getType()));
         }
         return flux.collectList();
+    }
+
+    private Mono<Boolean> checkCategoryExists(Long userId, Long ledgerId, String name, Integer type) {
+        if (ledgerId == null) {
+            return categoryRepository.existsByUserIdAndNameAndType(userId, name, type);
+        }
+        return categoryRepository.existsByUserIdAndLedgerIdAndNameAndType(userId, ledgerId, name, type);
     }
 }

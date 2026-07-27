@@ -44,16 +44,7 @@ public class LedgerService {
                 .updatedAt(LocalDateTime.now())
                 .build();
         return ledgerRepository.save(ledger)
-                .flatMap(savedLedger -> {
-                    LedgerMember member = LedgerMember.builder()
-                            .ledgerId(savedLedger.getId())
-                            .userId(userId)
-                            .role(ROLE_OWNER)
-                            .joinedAt(LocalDateTime.now())
-                            .build();
-                    return ledgerMemberRepository.save(member)
-                            .thenReturn(savedLedger);
-                });
+                .flatMap(savedLedger -> saveOwnerMember(savedLedger.getId(), userId));
     }
 
     /**
@@ -70,8 +61,8 @@ public class LedgerService {
      */
     public Mono<Ledger> getLedger(Long userId, Long ledgerId) {
         return checkMembership(userId, ledgerId)
-                .flatMap(member -> ledgerRepository.findById(ledgerId)
-                        .switchIfEmpty(Mono.error(new BusinessException(404, "账本不存在"))));
+                .flatMap(member -> ledgerRepository.findById(ledgerId))
+                .switchIfEmpty(Mono.error(new BusinessException(404, "账本不存在")));
     }
 
     /**
@@ -79,20 +70,20 @@ public class LedgerService {
      */
     public Mono<Ledger> updateLedger(Long userId, Long ledgerId, LedgerRequest request) {
         return checkManagePermission(userId, ledgerId)
-                .flatMap(member -> ledgerRepository.findById(ledgerId)
-                        .switchIfEmpty(Mono.error(new BusinessException(404, "账本不存在")))
-                        .flatMap(ledger -> {
-                            ledger.setName(request.getName());
-                            ledger.setDescription(request.getDescription());
-                            if (request.getType() != null) {
-                                ledger.setType(request.getType());
-                            }
-                            if (request.getAllowMemberEdit() != null) {
-                                ledger.setAllowMemberEdit(request.getAllowMemberEdit());
-                            }
-                            ledger.setUpdatedAt(LocalDateTime.now());
-                            return ledgerRepository.save(ledger);
-                        }));
+                .flatMap(member -> ledgerRepository.findById(ledgerId))
+                .switchIfEmpty(Mono.error(new BusinessException(404, "账本不存在")))
+                .flatMap(ledger -> {
+                    ledger.setName(request.getName());
+                    ledger.setDescription(request.getDescription());
+                    if (request.getType() != null) {
+                        ledger.setType(request.getType());
+                    }
+                    if (request.getAllowMemberEdit() != null) {
+                        ledger.setAllowMemberEdit(request.getAllowMemberEdit());
+                    }
+                    ledger.setUpdatedAt(LocalDateTime.now());
+                    return ledgerRepository.save(ledger);
+                });
     }
 
     /**
@@ -100,10 +91,11 @@ public class LedgerService {
      */
     public Mono<Void> deleteLedger(Long userId, Long ledgerId) {
         return checkOwnerPermission(userId, ledgerId)
-                .flatMap(member -> ledgerMemberRepository.findByLedgerId(ledgerId)
+                .flatMap(member -> ledgerRepository.findById(ledgerId)
+                        .switchIfEmpty(Mono.error(new BusinessException(404, "账本不存在"))))
+                .flatMap(ledger -> ledgerMemberRepository.findByLedgerId(ledgerId)
                         .flatMap(ledgerMemberRepository::delete)
-                        .then(ledgerRepository.findById(ledgerId)
-                                .flatMap(ledgerRepository::delete)));
+                        .then(ledgerRepository.delete(ledger)));
     }
 
     /**
@@ -119,18 +111,18 @@ public class LedgerService {
      */
     public Mono<LedgerMember> addMember(Long userId, Long ledgerId, LedgerMemberRequest request) {
         return checkManagePermission(userId, ledgerId)
-                .flatMap(member -> ledgerMemberRepository.findByLedgerIdAndUserId(ledgerId, request.getUserId())
-                        .flatMap(existing -> Mono.<LedgerMember>error(new BusinessException("该用户已是账本成员")))
-                        .switchIfEmpty(Mono.defer(() -> {
-                            Integer role = request.getRole() != null ? request.getRole() : 3;
-                            LedgerMember newMember = LedgerMember.builder()
-                                    .ledgerId(ledgerId)
-                                    .userId(request.getUserId())
-                                    .role(role)
-                                    .joinedAt(LocalDateTime.now())
-                                    .build();
-                            return ledgerMemberRepository.save(newMember);
-                        })));
+                .then(ledgerMemberRepository.findByLedgerIdAndUserId(ledgerId, request.getUserId()))
+                .flatMap(existing -> Mono.<LedgerMember>error(new BusinessException("该用户已是账本成员")))
+                .switchIfEmpty(Mono.defer(() -> {
+                    Integer role = request.getRole() != null ? request.getRole() : 3;
+                    LedgerMember newMember = LedgerMember.builder()
+                            .ledgerId(ledgerId)
+                            .userId(request.getUserId())
+                            .role(role)
+                            .joinedAt(LocalDateTime.now())
+                            .build();
+                    return ledgerMemberRepository.save(newMember);
+                }));
     }
 
     /**
@@ -138,14 +130,25 @@ public class LedgerService {
      */
     public Mono<Void> removeMember(Long userId, Long ledgerId, Long targetUserId) {
         return checkManagePermission(userId, ledgerId)
-                .flatMap(member -> ledgerMemberRepository.findByLedgerIdAndUserId(ledgerId, targetUserId)
-                        .switchIfEmpty(Mono.error(new BusinessException("该成员不存在")))
-                        .flatMap(targetMember -> {
-                            if (ROLE_OWNER == targetMember.getRole()) {
-                                return Mono.error(new BusinessException("不能移除账本所有者"));
-                            }
-                            return ledgerMemberRepository.deleteByLedgerIdAndUserId(ledgerId, targetUserId).then();
-                        }));
+                .then(ledgerMemberRepository.findByLedgerIdAndUserId(ledgerId, targetUserId))
+                .switchIfEmpty(Mono.error(new BusinessException("该成员不存在")))
+                .flatMap(targetMember -> {
+                    if (ROLE_OWNER == targetMember.getRole()) {
+                        return Mono.error(new BusinessException("不能移除账本所有者"));
+                    }
+                    return ledgerMemberRepository.deleteByLedgerIdAndUserId(ledgerId, targetUserId).then();
+                });
+    }
+
+    private Mono<Ledger> saveOwnerMember(Long ledgerId, Long userId) {
+        LedgerMember member = LedgerMember.builder()
+                .ledgerId(ledgerId)
+                .userId(userId)
+                .role(ROLE_OWNER)
+                .joinedAt(LocalDateTime.now())
+                .build();
+        return ledgerMemberRepository.save(member)
+                .then(ledgerRepository.findById(ledgerId));
     }
 
     /**

@@ -56,32 +56,10 @@ public class AuthService {
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build();
-                    return userRepository.save(user)
-                            .flatMap(u -> {
-                                // 创建默认个人账本
-                                Ledger defaultLedger = Ledger.builder()
-                                        .name("默认账本")
-                                        .description("系统自动创建的个人账本")
-                                        .ownerId(u.getId())
-                                        .type(1)
-                                        .allowMemberEdit(1)
-                                        .createdAt(LocalDateTime.now())
-                                        .updatedAt(LocalDateTime.now())
-                                        .build();
-                                return ledgerRepository.save(defaultLedger)
-                                        .flatMap(savedLedger -> {
-                                            // 插入所有者成员记录
-                                            LedgerMember member = LedgerMember.builder()
-                                                    .ledgerId(savedLedger.getId())
-                                                    .userId(u.getId())
-                                                    .role(1)
-                                                    .joinedAt(LocalDateTime.now())
-                                                    .build();
-                                            return ledgerMemberRepository.save(member)
-                                                    .thenReturn("注册成功");
-                                        });
-                            });
-                });
+                    return userRepository.save(user);
+                })
+                .flatMap(user -> createDefaultLedger(user.getId()))
+                .thenReturn("注册成功");
     }
 
     public Mono<LoginResponse> login(LoginRequest request) {
@@ -112,5 +90,27 @@ public class AuthService {
                             return Mono.error(new BusinessException(401, "Token无效或已过期"));
                         }))
                 .switchIfEmpty(Mono.error(new BusinessException(401, "Token无效或已过期")));
+    }
+
+    private Mono<Void> createDefaultLedger(Long userId) {
+        Ledger defaultLedger = Ledger.builder()
+                .name("默认账本")
+                .description("系统自动创建的个人账本")
+                .ownerId(userId)
+                .type(1)
+                .allowMemberEdit(1)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        return ledgerRepository.save(defaultLedger)
+                .flatMap(savedLedger -> {
+                    LedgerMember member = LedgerMember.builder()
+                            .ledgerId(savedLedger.getId())
+                            .userId(userId)
+                            .role(1)
+                            .joinedAt(LocalDateTime.now())
+                            .build();
+                    return ledgerMemberRepository.save(member).then();
+                });
     }
 }

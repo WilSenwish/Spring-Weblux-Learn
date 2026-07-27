@@ -1,0 +1,119 @@
+# ============================================================
+# 记账系统 - .gitignore
+# ============================================================
+
+# ----- Java / Maven -----
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+*.log
+*.ctxt
+.mvn/
+mvnw
+mvnw.cmd
+.mvnw
+dependency-reduced-pom.xml
+buildNumber.properties
+.maven-exec/
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# ----- IDE -----
+.idea/
+*.iml
+*.ipr
+*.iws
+*.ids
+*.eml
+.vscode/
+*.swp
+*.swo
+*~
+
+# ----- Node.js / 前端 -----
+node_modules/
+dist/
+dist-ssr/
+build/
+.npm/
+.eslintcache
+.stylelintcache
+*.local
+coverage/
+.nyc_output/
+.pnp
+.pnp.js
+.yarn/
+.yarn-integrity
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+npm-debug.log*
+
+# ----- 系统文件 -----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ----- Mise (版本管理工具) -----
+.mise/
+.mise.toml.local
+
+# ----- 环境变量 / 配置 -----
+.env
+.env.*
+!.env.example
+!.env.sample
+application-local.yml
+application-local.properties
+
+# ----- 临时文件 -----
+*.tmp
+*.bak
+*.swp
+*.swo
+*.pid
+*.seed
+*.pid.lock
+.cache/
+.tmp/
+.temp/
+
+# ----- 测试覆盖率 / 报告 -----
+*.lcov
+.nyc_output/
+coverage/
+*.lcov
+.jspc
+
+# ----- 其他 -----
+*.hprof
+*.dump
+*.crash
+*.trace
+.reactor/
+.trae/
+
+# ----- 文档构建 -----
+docs/_build/
+site/
+
+# ----- 保留项 -----
+!.gitkeep
+!.gitignore
